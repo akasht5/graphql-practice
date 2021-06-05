@@ -6,11 +6,24 @@ export const typeDefs = gql`
         quantity: Int
     }   
 
+    extend type DateTime{
+        nanoseconds: Int!,
+        seconds: Int!
+    }
+
+    extend type User{
+        id: String!,
+        displayName: String!,
+        email: String!,
+        createdAt: DateTime!
+    }
+
     extend type Mutation {
         ToggleCartHidden: Boolean!,
         AddItemToCart(item: Item!): [Item]!,
         RemoveItemFromCart(item: Item!): [Item]!,
-        ClearItemFromCart(item: Item!): [Item]!
+        ClearItemFromCart(item: Item!): [Item]!,
+        SetCurrentUser(user: User!): User!
     }
 `
 
@@ -38,6 +51,12 @@ const GET_CART_TOTAL = gql`
 }
 `
 
+const GET_CURRENT_USER = gql`
+{
+    currentUser @client
+}
+`
+
 const updateCartItemsQueries = (cache, newCartItems) => {
     cache.writeQuery({
         query: GET_CART_ITEMS,
@@ -57,7 +76,7 @@ const updateCartItemsQueries = (cache, newCartItems) => {
 
 export const resolvers = {
     Mutation : {
-        toggleCartHidden : (_root, _args, { cache }) => {
+        toggleCartHidden: (_root, _args, { cache }) => {
             const { cartHidden } = cache.readQuery({
                 query: GET_CART_HIDDEN
             })
@@ -70,7 +89,7 @@ export const resolvers = {
             return !cartHidden
         },
 
-        addItemToCart : (_root, {item}, {cache}) => {
+        addItemToCart: (_root, {item}, {cache}) => {
             const { cartItems } = cache.readQuery({
                 query: GET_CART_ITEMS
               });
@@ -82,7 +101,7 @@ export const resolvers = {
               return newCartItems;
         },
 
-        removeItemFromCart : (_root, { item }, { cache }) => {
+        removeItemFromCart: (_root, { item }, { cache }) => {
             const { cartItems } = cache.readQuery({
                 query: GET_CART_ITEMS
             })
@@ -94,7 +113,7 @@ export const resolvers = {
             return newCartItems;
         },
 
-        clearItemFromCart : (_root, { item }, { cache }) => {
+        clearItemFromCart: (_root, { item }, { cache }) => {
             const { cartItems } = cache.readQuery({
                 query : GET_CART_ITEMS
             });
@@ -104,6 +123,15 @@ export const resolvers = {
             updateCartItemsQueries(cache, newCartItems);
 
             return newCartItems;
+        },
+
+        setCurrentUser: (_root, { user }, { cache }) => {
+            cache.writeQuery({
+                query: GET_CURRENT_USER,
+                data: { currentUser: user }
+            })
+
+            return user;
         }
     }
 }
